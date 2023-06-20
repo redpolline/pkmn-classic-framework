@@ -65,6 +65,8 @@
     <Reference Include="System.Data.SQLite">
       <HintPath>..\packages\Stub.System.Data.SQLite.Core.NetFramework.1.0.118.0\lib\net46\System.Data.SQLite.dll</HintPath>
     </Reference>
+  </ItemGroup>
+  <ItemGroup Condition="$([MSBuild]::IsOsPlatform(Windows))">
     <Reference Include="System.Data.SQLite.Linq">
       <HintPath>..\packages\System.Data.SQLite.Linq.1.0.118.0\lib\net46\System.Data.SQLite.Linq.dll</HintPath>
     </Reference>
@@ -158,7 +160,31 @@
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\packages\Stub.System.Data.SQLite.Core.NetFramework.1.0.118.0\build\net46\Stub.System.Data.SQLite.Core.NetFramework.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Stub.System.Data.SQLite.Core.NetFramework.1.0.118.0\build\net46\Stub.System.Data.SQLite.Core.NetFramework.targets'))" />
+    <Error Condition="$([MSBuild]::IsOsPlatform(Windows)) AND !Exists('..\packages\Stub.System.Data.SQLite.Core.NetFramework.1.0.118.0\build\net46\Stub.System.Data.SQLite.Core.NetFramework.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Stub.System.Data.SQLite.Core.NetFramework.1.0.118.0\build\net46\Stub.System.Data.SQLite.Core.NetFramework.targets'))" />
+    <Error Condition="$([MSBuild]::IsOsPlatform(Linux)) AND !Exists('..\packages\Stub.System.Data.SQLite.Core.NetStandard.1.0.118.0\lib\netstandard2.0\System.Data.SQLite.dll')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Stub.System.Data.SQLite.Core.NetStandard.1.0.118.0\lib\netstandard2.0\System.Data.SQLite.dll'))" />
+    <Error Condition="$([MSBuild]::IsOsPlatform(OSX)) AND !Exists('..\packages\Stub.System.Data.SQLite.Core.NetStandard.1.0.118.0\lib\netstandard2.0\System.Data.SQLite.dll')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Stub.System.Data.SQLite.Core.NetStandard.1.0.118.0\lib\netstandard2.0\System.Data.SQLite.dll'))" />
+  </Target>
+  <!-- The target below is a hack...
+
+       The purpose of it is to copy the correct SQLite.Interop.dll for a given OS (Linux / OSX) to the project output directory.
+       (Because MonoDevelop cannot target netstandard2.0 without creating link errors between the netstandard, ASP.NET, and Mysql.Data assemblies.)
+
+       It can be removed once all of the projects have been converted to work the dotnet SDK from Microsoft.
+       (Or Veekun / Someone else decides to start providing mysql dumps of the database.
+        In which case, we can remove the SQLite dep entirely. Which causes nothing but problems with it's native code binary. :) )
+  -->
+  <Target Name="FixSQLiteInteropFilesOnLinuxAndOSX" Condition="$([MSBuild]::IsOsPlatform(Linux)) OR $([MSBuild]::IsOsPlatform(OSX))" BeforeTargets="CopySQLiteInteropFiles">
+    <PropertyGroup>
+      <NewSqliteOpFiles>@(SQLiteInteropFiles->Replace('NetFramework', 'NetStandard')->Replace('/SQLite.Interop.dll', '/native/SQLite.Interop.dll'))</NewSqliteOpFiles>
+      <NewSqliteOpFiles Condition="$([MSBuild]::IsOsPlatform(Linux))">$(NewSqliteOpFiles.Replace('build/net46/', 'runtimes/linux-'))</NewSqliteOpFiles>
+      <NewSqliteOpFiles Condition="$([MSBuild]::IsOsPlatform(OSX))">$(NewSqliteOpFiles.Replace('build/net46/', 'runtimes/osx-'))</NewSqliteOpFiles>
+    </PropertyGroup>
+    <ItemGroup>
+      <SQLiteInteropFiles Remove="@(SQLiteInteropFiles)" />
+      <SQLiteInteropFiles Include="$(NewSqliteOpFiles.Split(';'))" />
+      <SQLiteInteropFiles Remove="%(SQLiteInteropFiles.Identity)" Condition="!Exists(%(SQLiteInteropFiles.Identity))" />
+    </ItemGroup>
+    <Error Condition="'@(SQLiteInteropFiles->Count())' == 0" Text="Could not locate the SQLite.Interop.dll(s). Please ensure they are installed at [$(NewSqliteOpFiles)]." />
   </Target>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

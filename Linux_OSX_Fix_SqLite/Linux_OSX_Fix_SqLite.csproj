@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <MSBuildEnableWorkloadResolver>False</MSBuildEnableWorkloadResolver>
+  </PropertyGroup>
+  <ItemGroup Condition="$([MSBuild]::IsOsPlatform(Windows))">
+    <Reference Include="System.Data.SQLite" Version="1.0.118.0">
+      <HintPath>..\packages\Stub.System.Data.SQLite.Core.NetFramework.1.0.118.0\lib\net462\System.Data.SQLite.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup Condition="$([MSBuild]::IsOsPlatform(Linux)) OR $([MSBuild]::IsOsPlatform(OSX))">
+    <Reference Include="System.Data.SQLite" Version="1.0.118.0">
+      <HintPath>..\packages\Stub.System.Data.SQLite.Core.NetStandard.1.0.118.0\lib\netstandard2.0\System.Data.SQLite.dll</HintPath>
+    </Reference>
+    <Reference Include="Stub.System.Data.SQLite.Core.NetStandard" Version="1.0.118.0">
+      <HintPath>..\packages\Stub.System.Data.SQLite.Core.NetStandard.1.0.118.0\lib\netstandard2.0\System.Data.SQLite.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="System.Data.SQLite" Version="1.0.118">
+      <HintPath>..\packages\Stub.System.Data.SQLite.Core.NetStandard.1.0.118.0\lib\netstandard2.0\System.Data.SQLite.dll</HintPath>
+    </PackageReference>
+    <PackageReference Include="Stub.System.Data.SQLite.Core.NetStandard" Version="1.0.118">
+      <HintPath>..\packages\Stub.System.Data.SQLite.Core.NetStandard.1.0.118.0\lib\netstandard2.0\System.Data.SQLite.dll</HintPath>
+    </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+</Project>
